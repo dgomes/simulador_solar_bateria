@@ -1,29 +1,27 @@
+import argparse
 import pandas as pd
 import numpy as np
 from scipy import integrate
 from battery import Battery
-import threading
 import concurrent.futures
 
-
+#cvs exported from influxDB
 FILES = {
     'grid': '2021/grid.csv', 
     'solar': '2021/solar.csv'
 }
 
-
+#Bi-Horario
 OPCAO_HORARIA = {
     'vazio': (22, 8),
     'fora_de_vazio': (8, 22)
 }
 
-MULTIPLE = 6 # multiple of 500W 
-BATTERY_SIZE = 5.9
+CSV_FILE_DATA_INTERVAL = 2  #csv files, time between entries
 
-PERIOD = 2  #csv files, time between entries
+ENERGY_SAMPLE_WINDOW = 10   #impacts speed of the program
 
 store = {}
-
 
 def between_times(hour, start, stop):
     if (start < stop and start < hour < stop):
@@ -39,16 +37,16 @@ def get_data(filename):
     if 'name' in df:
         del df['name']
 
-    df = df.set_index('time').resample(str(PERIOD)+'S').ffill()
+    df = df.set_index('time').resample(str(CSV_FILE_DATA_INTERVAL)+'S').ffill()
 
     return df
 
 def calculate_energy(df, key):
-    df['energy'] = df.apply(lambda x: x*PERIOD*2.7778E-7).bfill() # PERIOD is the delta x (see resample above), last convert Ws to kWh
-    df = df.resample('20S').sum() #TODO make configurable
+    df['energy'] = df.apply(lambda x: x*CSV_FILE_DATA_INTERVAL*2.7778E-7).bfill() # PERIOD is the delta x (see resample above), last convert Ws to kWh
+    df = df.resample(str(ENERGY_SAMPLE_WINDOW)+'S').sum() #TODO make configurable
     return df
 
-def main():
+def main(MULTIPLE, BATTERY_SIZE):
     with concurrent.futures.ThreadPoolExecutor() as executor:
         print(f"LOADING CSV {[f for f in FILES.values()]}...", end='', flush=True)
         future_to_key = {executor.submit(get_data, filename): key for key, filename in FILES.items()}
@@ -86,22 +84,27 @@ def main():
                 house_needs[tarifa] += consumption
 
                 if (consumption - new_solar) > 0:
-                    meter[tarifa] += (consumption - new_solar - batt.discharge(4900*PERIOD*2.7778E-7))
+                    meter[tarifa] += (consumption - new_solar - batt.discharge(4900*CSV_FILE_DATA_INTERVAL*2.7778E-7))
 
-                export = (new_solar - consumption) if (new_solar - consumption) > 0 else 0
-                export = batt.charge(export)
-                export_total += export 
+                if (new_solar - consumption) > 0:
+                    export_total += batt.charge(new_solar - consumption) #if battery full export energy
                 break
         solar_total += new_solar
     print('done\n')
 
-    print(f"Consumo em Vazio: {house_needs['vazio']:.2f}:")
-    print(f"Consumo Fora de Vazio: {house_needs['fora_de_vazio']:.2f}:")
-    print(f"Energia Solar Produzida ({MULTIPLE*500}W instalados): {solar_total:.2f}")
-    print(f"Energia Solar Exportada: {export_total:.2f}")
+    print(f"Consumo em Vazio:   {house_needs['vazio']:.2f}:")
+    print(f"Consumo Fora de Vazio:  {house_needs['fora_de_vazio']:.2f}:")
+    print(f"Energia Solar Produzida ({MULTIPLE*500}W instalados):   {solar_total:.2f}")
+    print(f"Energia Solar Exportada:    {export_total:.2f}")
     print(f"Energia Importada em Vazio: {meter['vazio']:.2f}")
     print(f"Energia Importada em Fora de Vazio: {meter['fora_de_vazio']:.2f}")
-    print(f"Energia Consumida da Bateria ({BATTERY_SIZE}kWh instalador): {batt.total_energy_supplied:.2f}")
+    print(f"Energia Consumida da Bateria ({BATTERY_SIZE}kWh instalador):    {batt.total_energy_supplied:.2f}")
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--solar", help="Potencia Instalada Fotovoltaico", type=int, default=3000)
+    parser.add_argument("--bateria", help="Potencia Instalada Bateria", type=float, default=5.9)
+    args = parser.parse_args()
+
+    # argument is the multiple of 500W 
+    main(args.solar/500, args.bateria)
