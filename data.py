@@ -17,7 +17,7 @@ OPCAO_HORARIA = {
     'fora_de_vazio': (8, 22)
 }
 
-MULTIPLE = 4 # multiple of 500W 
+MULTIPLE = 6 # multiple of 500W 
 BATTERY_SIZE = 5.9
 
 PERIOD = 2  #csv files, time between entries
@@ -45,7 +45,7 @@ def get_data(filename):
 
 def calculate_energy(df, key):
     df['energy'] = df.apply(lambda x: x*PERIOD*2.7778E-7).bfill() # PERIOD is the delta x (see resample above), last convert Ws to kWh
-    df = df.resample('30S').sum() #TODO make configurable
+    df = df.resample('20S').sum() #TODO make configurable
     return df
 
 def main():
@@ -93,14 +93,15 @@ def main():
                 export_total += export 
                 break
         solar_total += new_solar
-    print('done')
+    print('done\n')
 
-    print(f"Solar capacity installed: {MULTIPLE*500}")
-    print(f"Produced Solar Energy: {solar_total:.2f}")
-    print(f"Solar Energy Exported: {export_total:.2f}")
-    print(f"Meter Vazio: {meter['vazio']:.2f}")
-    print(f"Meter Fora de Vazio: {meter['fora_de_vazio']:.2f}")
-    print(f"Battery Energy supplied: {batt.total_energy_supplied:.2f}")
+    print(f"Consumo em Vazio: {house_needs['vazio']:.2f}:")
+    print(f"Consumo Fora de Vazio: {house_needs['fora_de_vazio']:.2f}:")
+    print(f"Energia Solar Produzida ({MULTIPLE*500}W instalados): {solar_total:.2f}")
+    print(f"Energia Solar Exportada: {export_total:.2f}")
+    print(f"Energia Importada em Vazio: {meter['vazio']:.2f}")
+    print(f"Energia Importada em Fora de Vazio: {meter['fora_de_vazio']:.2f}")
+    print(f"Energia Consumida da Bateria ({BATTERY_SIZE}kWh instalador): {batt.total_energy_supplied:.2f}")
 
 if __name__ == "__main__":
     main()
