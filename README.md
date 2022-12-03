@@ -2,7 +2,7 @@
 
 Com base em registos em CSV de consumo e produção electrica para autoconsumo, estima-se consumos e produções em caso de upgrades do sistema fotovoltaico.
 
-# Requisitos:
+## Requisitos:
 
 2 ficheiro CSV com formato:
 ```csv
@@ -11,10 +11,26 @@ W,1546300801334963968,963
 ...
 ```
 
-# Example:
+## Usage:
 
 ```bash
-$ python3 data.py 3200 500 2018/grid.csv 2018/solar.csv --bateria=5 --potencia-bateria=3500
+usage: main.py [-h] [--bateria BATERIA] [--potencia-bateria POTENCIA_BATERIA] solar installed_solar csv_rede csv_solar
+
+positional arguments:
+  solar                 Potencia Fotovoltaico a instalar
+  installed_solar       Potencia Fotovoltaico instalada
+  csv_rede              Ficheiro CSV com medidas de potência da rede
+  csv_solar             Ficheiro CSV com medidas de potência da produção solar
+
+options:
+  -h, --help            show this help message and exit
+  --bateria BATERIA    
+```
+
+## Example:
+
+```bash
+$ python3 main.py 3200 500 2018/grid.csv 2018/solar.csv --bateria=5 --potencia-bateria=3500
 LOADING CSV ['2018/grid.csv', '2018/solar.csv']...done
 ReIndex Solar...done
 Calculating Energy...done
