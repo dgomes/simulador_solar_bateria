@@ -29,6 +29,9 @@ options:
 
 ## Example:
 
+Casa com 500W de paineis instalados, com registo historico de produção em solar.csv.
+Simula-se instalação total de 3200W e de uma bateria de 5kWh com potencia pico de 3500W
+
 ```bash
 $ python3 main.py 3200 500 2018/grid.csv 2018/solar.csv --bateria=5 --potencia-bateria=3500
 LOADING CSV ['2018/grid.csv', '2018/solar.csv']...done
