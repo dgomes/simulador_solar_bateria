@@ -24,7 +24,9 @@ positional arguments:
 
 options:
   -h, --help            show this help message and exit
-  --bateria BATERIA    
+  --bateria BATERIA     Capacidade da Bateria a instalar
+  --potencia-bateria POTENCIA_BATERIA
+                        Potencia Bateria a instalar
 ```
 
 ## Example:
